@@ -1,0 +1,285 @@
+@import 'tailwindcss';
+
+/* ============================================================
+   DESIGN TOKENS
+   Palette: olive drab field ground, bone paper, safety orange.
+   Orange is the airsoft orange tip -- it is rationed. It appears
+   only on live/active elements and the primary action. If it
+   shows up everywhere it stops meaning anything.
+   ============================================================ */
+
+@theme {
+  --color-field-950: #10140d;
+  --color-field-900: #171d13;
+  --color-field-850: #1e2519;
+  --color-field-800: #26301f;
+  --color-field-700: #35422b;
+  --color-field-600: #4a5a3c;
+
+  --color-bone: #e9e5d8;
+  --color-bone-dim: #a3a894;
+  --color-bone-faint: #6f7563;
+
+  --color-tip: #ff6b1a;
+  --color-tip-dim: #b84d13;
+
+  --color-confirmed: #97c25c;
+  --color-hit: #d9483b;
+
+  --font-display: var(--font-archivo), system-ui, sans-serif;
+  --font-body: var(--font-plex-sans), system-ui, sans-serif;
+  --font-data: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+html {
+  background: var(--color-field-950);
+}
+
+body {
+  background: var(--color-field-950);
+  color: var(--color-bone);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+/* Faint contour-line texture. Ambient, not decorative noise --
+   it reads as the paper the ledger is printed on. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 39px,
+    rgba(233, 229, 216, 0.025) 39px,
+    rgba(233, 229, 216, 0.025) 40px
+  );
+}
+
+::selection {
+  background: var(--color-tip);
+  color: var(--color-field-950);
+}
+
+/* Visible keyboard focus everywhere. Non-negotiable. */
+:focus-visible {
+  outline: 2px solid var(--color-tip);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   TYPE ROLES
+   ============================================================ */
+
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+.t-eyebrow {
+  font-family: var(--font-data);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-bone-faint);
+}
+
+.t-data {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   SIGNATURE: the chrono readout
+   The dashboard K/D is rendered like a chronograph display --
+   the one instrument every airsofter reads a number off of.
+   This is the single bold element. Everything else stays quiet.
+   ============================================================ */
+
+.chrono {
+  position: relative;
+  background: var(--color-field-900);
+  border: 1px solid var(--color-field-700);
+  overflow: hidden;
+}
+
+.chrono::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.22) 0px,
+    rgba(0, 0, 0, 0.22) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.chrono-value {
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: var(--color-tip);
+  text-shadow: 0 0 24px rgba(255, 107, 26, 0.35);
+}
+
+/* Hit tape: proportional kills-vs-deaths bar under the readout */
+.tape {
+  display: flex;
+  height: 6px;
+  background: var(--color-field-800);
+  overflow: hidden;
+}
+.tape-k {
+  background: var(--color-confirmed);
+}
+.tape-d {
+  background: var(--color-hit);
+}
+
+/* ============================================================
+   LEDGER ROWS
+   Each logged game is a torn scorecard stub. The notched left
+   edge marks a real record, so it earns its place.
+   ============================================================ */
+
+.stub {
+  position: relative;
+  background: var(--color-field-900);
+  border: 1px solid var(--color-field-800);
+  border-left: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.stub::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-field-600);
+  -webkit-mask-image: repeating-linear-gradient(
+    180deg,
+    #000 0 6px,
+    transparent 6px 10px
+  );
+  mask-image: repeating-linear-gradient(180deg, #000 0 6px, transparent 6px 10px);
+}
+
+.stub:hover {
+  background: var(--color-field-850);
+  border-color: var(--color-field-700);
+}
+.stub:hover::before {
+  background: var(--color-tip);
+}
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+
+.btn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8125rem;
+  padding: 0.75rem 1.25rem;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--color-tip);
+  color: var(--color-field-950);
+  border: 1px solid var(--color-tip);
+}
+.btn-primary:hover {
+  background: #ff8340;
+  border-color: #ff8340;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-bone);
+  border: 1px solid var(--color-field-700);
+}
+.btn-ghost:hover {
+  border-color: var(--color-bone-faint);
+  background: var(--color-field-900);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.field-input {
+  width: 100%;
+  background: var(--color-field-950);
+  border: 1px solid var(--color-field-700);
+  color: var(--color-bone);
+  font-family: var(--font-data);
+  font-size: 0.9375rem;
+  padding: 0.625rem 0.75rem;
+  transition: border-color 0.15s ease;
+}
+.field-input:hover {
+  border-color: var(--color-field-600);
+}
+.field-input::placeholder {
+  color: var(--color-bone-faint);
+}
+
+.field-label {
+  font-family: var(--font-data);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-bone-dim);
+  display: block;
+  margin-bottom: 0.375rem;
+}
+
+.notice {
+  border-left: 3px solid;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+.notice-error {
+  border-color: var(--color-hit);
+  background: rgba(217, 72, 59, 0.09);
+  color: #f0a9a2;
+}
+.notice-ok {
+  border-color: var(--color-confirmed);
+  background: rgba(151, 194, 92, 0.09);
+  color: var(--color-confirmed);
+}
