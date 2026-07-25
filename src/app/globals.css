@@ -283,3 +283,25 @@ body::before {
   background: rgba(151, 194, 92, 0.09);
   color: var(--color-confirmed);
 }
+
+/* ============================================================
+   NAV SCROLLING
+   overflow-x:auto alone lets the browser scroll vertically too,
+   so the row could be nudged up and down by a stray swipe or
+   trackpad gesture. Pinning overflow-y to hidden and fixing the
+   height means it can only ever move sideways.
+   ============================================================ */
+
+.nav-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  white-space: nowrap;
+  align-items: stretch;
+}
+
+.nav-scroll::-webkit-scrollbar {
+  display: none;
+}

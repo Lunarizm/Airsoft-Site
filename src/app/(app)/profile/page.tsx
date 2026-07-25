@@ -1,5 +1,8 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import ProfileEditor from '@/components/ProfileEditor'
 import DeleteAccount from '@/components/DeleteAccount'
+import MfaSetup from '@/components/MfaSetup'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,26 +12,31 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, display_name, bio, role, created_at')
+    .select('id, username, display_name, bio, avatar_style, leaderboard_visibility, anonymous_on_leaderboard, role, created_at')
     .eq('id', user!.id)
     .single()
 
   const { data: stats } = await supabase
     .from('player_stats')
-    .select('*')
+    .select('games_logged, total_kills, total_deaths, kd_ratio')
     .eq('user_id', user!.id)
-    .single()
+    .maybeSingle()
 
   return (
-    <div className="max-w-xl space-y-10">
+    <div className="max-w-xl space-y-11">
       <div>
         <p className="t-eyebrow mb-1.5">
           {profile?.role === 'admin' ? 'Administrator' : 'Player'}
         </p>
         <h1 className="t-display text-3xl">{profile?.username}</h1>
-        <p className="t-data text-xs text-[var(--color-bone-faint)] mt-2">
-          Joined {profile?.created_at?.slice(0, 10)}
-        </p>
+        {profile && (
+          <Link
+            href={`/u/${profile.username}`}
+            className="t-data text-xs text-[var(--color-tip)] hover:underline mt-2 inline-block"
+          >
+            View public profile →
+          </Link>
+        )}
       </div>
 
       <div>
@@ -48,13 +56,17 @@ export default async function ProfilePage() {
         </dl>
       </div>
 
+      {profile && <ProfileEditor profile={profile} />}
+
       <div>
-        <p className="t-eyebrow mb-3">Account email</p>
+        <p className="t-eyebrow mb-2">Account email</p>
         <p className="t-data text-sm text-[var(--color-bone-dim)]">{user?.email}</p>
         <p className="text-xs text-[var(--color-bone-faint)] mt-2">
-          Only you can see your email. Other players see your callsign.
+          Never shown to other players.
         </p>
       </div>
+
+      <MfaSetup />
 
       <DeleteAccount username={profile?.username ?? ''} />
     </div>

@@ -124,8 +124,11 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
     }
   }
 
+  // Password was right. If they also have a second factor, that comes next.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect(aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2' ? '/verify' : '/dashboard')
 }
 
 export async function signOut() {

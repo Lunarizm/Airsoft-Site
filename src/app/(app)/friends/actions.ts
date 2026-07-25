@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { isUuid } from '@/lib/validate'
 
 export type FriendState = { error?: string; message?: string }
 
@@ -12,6 +13,7 @@ export type FriendState = { error?: string; message?: string }
  * and blocks that can be walked around by asking from the other side.
  */
 async function findRelationship(supabase: Awaited<ReturnType<typeof createClient>>, meId: string, otherId: string) {
+  if (!isUuid(meId) || !isUuid(otherId)) return null
   const { data } = await supabase
     .from('friendships')
     .select('requester_id, addressee_id, status')
@@ -23,11 +25,46 @@ async function findRelationship(supabase: Awaited<ReturnType<typeof createClient
   return data
 }
 
+/**
+ * Look up a player by EXACT callsign, case-insensitive.
+ * Deliberately not a fuzzy search: browsing a list of strangers is
+ * how a small friends feature turns into a directory of minors.
+ */
+export async function findPlayerByCallsign(
+  _prev: FriendState & { found?: { id: string; username: string } },
+  formData: FormData
+): Promise<FriendState & { found?: { id: string; username: string } }> {
+  const callsign = String(formData.get('callsign') ?? '').trim()
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(callsign)) {
+    return { error: 'Enter a full callsign (3-20 letters, numbers or underscores).' }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'You are not signed in.' }
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, username')
+    .ilike('username', callsign)
+    .eq('is_banned', false)
+    .maybeSingle()
+
+  // Same message either way. "No such player" tells someone probing
+  // the form exactly which callsigns exist.
+  if (!data || data.id === user.id) {
+    return { error: 'No player found with that exact callsign.' }
+  }
+
+  return { found: data }
+}
+
 export async function sendFriendRequest(
   _prev: FriendState,
   formData: FormData
 ): Promise<FriendState> {
   const targetId = String(formData.get('userId') ?? '')
+  if (!isUuid(targetId)) return { error: 'Invalid player.' }
   if (!targetId) return { error: 'No player selected.' }
 
   const supabase = await createClient()
@@ -71,6 +108,8 @@ export async function acceptRequest(
   formData: FormData
 ): Promise<FriendState> {
   const requesterId = String(formData.get('userId') ?? '')
+  if (!isUuid(requesterId)) return { error: 'Invalid player.' }
+  if (!isUuid(requesterId)) return { error: 'Invalid player.' }
   const supabase = await createClient()
   const {
     data: { user },
@@ -120,6 +159,8 @@ export async function removeFriend(
   formData: FormData
 ): Promise<FriendState> {
   const otherId = String(formData.get('userId') ?? '')
+  if (!isUuid(otherId)) return { error: 'Invalid player.' }
+  if (!isUuid(otherId)) return { error: 'Invalid player.' }
   const supabase = await createClient()
   const {
     data: { user },

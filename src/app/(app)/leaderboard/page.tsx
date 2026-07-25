@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import Avatar from '@/components/Avatar'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,10 +23,11 @@ type SortKey = keyof typeof SORTS
 export default async function LeaderboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string }>
+  searchParams: Promise<{ sort?: string; scope?: string }>
 }) {
   const params = await searchParams
   const sort: SortKey = params.sort && params.sort in SORTS ? (params.sort as SortKey) : 'kd'
+  const scope = params.scope === 'friends' ? 'friends' : 'all'
 
   const supabase = await createClient()
   const {
@@ -33,6 +35,22 @@ export default async function LeaderboardPage({
   } = await supabase.auth.getUser()
 
   let query = supabase.from('player_stats').select('*').limit(100)
+
+  // Friends scope: me plus everyone I've actually accepted.
+  if (scope === 'friends' && user) {
+    const { data: links } = await supabase
+      .from('friendships')
+      .select('requester_id, addressee_id')
+      .eq('status', 'accepted')
+
+    const ids = [
+      user.id,
+      ...(links ?? []).map((l) =>
+        l.requester_id === user.id ? l.addressee_id : l.requester_id
+      ),
+    ]
+    query = query.in('user_id', ids)
+  }
 
   if (sort === 'kd') {
     query = query
@@ -52,11 +70,27 @@ export default async function LeaderboardPage({
         <h1 className="t-display text-3xl">Leaderboard</h1>
       </div>
 
+      <div className="flex gap-2 mb-5">
+        {(['all', 'friends'] as const).map((sc) => (
+          <Link
+            key={sc}
+            href={`/leaderboard?sort=${sort}&scope=${sc}`}
+            className={`t-data text-[0.6875rem] uppercase tracking-widest px-3 py-1.5 border transition-colors ${
+              scope === sc
+                ? 'border-[var(--color-tip)] text-[var(--color-tip)]'
+                : 'border-[var(--color-field-700)] text-[var(--color-bone-faint)] hover:text-[var(--color-bone)]'
+            }`}
+          >
+            {sc === 'all' ? 'Everyone' : 'Friends only'}
+          </Link>
+        ))}
+      </div>
+
       <div className="flex gap-1 mb-6 border-b border-[var(--color-field-800)]">
         {(Object.keys(SORTS) as SortKey[]).map((key) => (
           <Link
             key={key}
-            href={`/leaderboard?sort=${key}`}
+            href={`/leaderboard?sort=${key}&scope=${scope}`}
             className={`t-data text-xs uppercase tracking-widest px-3.5 py-2.5 border-b-2 -mb-px transition-colors ${
               sort === key
                 ? 'border-[var(--color-tip)] text-[var(--color-bone)]'
@@ -78,9 +112,11 @@ export default async function LeaderboardPage({
         <div className="border border-dashed border-[var(--color-field-700)] px-6 py-14 text-center">
           <p className="t-display text-lg mb-2">Nobody qualifies yet</p>
           <p className="text-sm text-[var(--color-bone-dim)]">
-            {sort === 'kd'
-              ? `Log ${MIN_GAMES} games and you'll be first on the board.`
-              : 'Log a game to get on the board.'}
+            {scope === 'friends'
+              ? 'Add some friends, or get them to log a few games.'
+              : sort === 'kd'
+                ? `Log ${MIN_GAMES} games and you'll be first on the board.`
+                : 'Log a game to get on the board.'}
           </p>
         </div>
       ) : (
@@ -103,8 +139,16 @@ export default async function LeaderboardPage({
                   {rank}
                 </span>
 
+                <Avatar seed={r.user_id} style={r.avatar_style ?? 0} size={26} />
+
                 <span className="flex-1 min-w-0 truncate text-sm">
-                  {r.username}
+                  {r.anonymous_on_leaderboard && !isMe ? (
+                    <span className="text-[var(--color-bone-faint)]">anonymous player</span>
+                  ) : (
+                    <Link href={`/u/${r.username}`} className="hover:text-[var(--color-tip)] transition-colors">
+                      {r.username}
+                    </Link>
+                  )}
                   {isMe && (
                     <span className="t-data text-[0.625rem] uppercase tracking-widest text-[var(--color-tip)] ml-2">
                       you

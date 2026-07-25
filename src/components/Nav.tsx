@@ -22,7 +22,7 @@ export default function Nav({ username, isAdmin }: { username: string; isAdmin: 
           Airsoft<span className="text-[var(--color-tip)]">Log</span>
         </Link>
 
-        <nav className="flex gap-5 text-sm flex-1 overflow-x-auto">
+        <nav className="flex gap-5 text-sm flex-1 nav-scroll">
           {LINKS.map((l) => {
             const active = path === l.href || path.startsWith(l.href + '/')
             return (

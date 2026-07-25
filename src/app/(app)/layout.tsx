@@ -8,6 +8,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // If this account has 2FA enrolled but the session hasn't cleared it
+  // yet, currentLevel is aal1 while nextLevel is aal2. Checking here
+  // covers every page inside this layout at once -- add a new page and
+  // it's protected automatically, with nothing to remember.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2') redirect('/verify')
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('username, role, is_banned, ban_reason')
