@@ -65,7 +65,7 @@ export default async function GamesPage() {
                     </p>
                     <form action={deleteGame} className="mt-2">
                       <input type="hidden" name="id" value={g.id} />
-                      <button className="t-data text-[0.6875rem] uppercase tracking-widest text-[var(--color-bone-faint)] hover:text-[var(--color-hit)] transition-colors">
+                      <button className="t-data text-[0.6875rem] uppercase tracking-widest px-2.5 py-1 border border-[var(--color-field-700)] text-[var(--color-bone-dim)] hover:border-[var(--color-hit)] hover:text-[var(--color-hit)] transition-colors">
                         Delete
                       </button>
                     </form>
